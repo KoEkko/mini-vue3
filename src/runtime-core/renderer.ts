@@ -44,7 +44,7 @@ function mountElement(vnode, container) {
       const isOn = (key:string) => /^on[A-Z]/.test(key)
       if (isOn(key)) {
         const event = key.slice(2).toLocaleLowerCase()
-        el.addEventlistener(event,val)
+        el.addEventListener(event,val)
       }
       el.setAttribute(key, val);
     }
