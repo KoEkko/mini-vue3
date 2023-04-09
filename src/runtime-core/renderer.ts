@@ -1,5 +1,6 @@
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { Fragment, Text } from "./vnode";
 
 export function render(vnode, container) {
   // patch
@@ -13,12 +14,34 @@ export function patch(vnode, container) {
 
   // 判断是不是element类型
   // 是 element 那么就应该处理 element
-  const { shapeFlag } = vnode;
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container);
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
+  const { type, shapeFlag } = vnode;
+
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break;
+    case Text:
+      processText(vnode, container)
+      break;
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container);
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      }
+      break;
   }
+}
+
+function processText(vnode, container) {
+  const { children } = vnode
+  const textNode = (vnode.el = document.createTextNode(children))
+  container.append(textNode)
+}
+
+function processFragment(vnode, container) {
+  // mountChildren
+  mountChildren(vnode, container)
 }
 
 function processElement(vnode: any, container: any) {
@@ -41,10 +64,10 @@ function mountElement(vnode, container) {
   if (props) {
     for (const key in props) {
       const val = props[key];
-      const isOn = (key:string) => /^on[A-Z]/.test(key)
+      const isOn = (key: string) => /^on[A-Z]/.test(key);
       if (isOn(key)) {
-        const event = key.slice(2).toLocaleLowerCase()
-        el.addEventListener(event,val)
+        const event = key.slice(2).toLocaleLowerCase();
+        el.addEventListener(event, val);
       }
       el.setAttribute(key, val);
     }
