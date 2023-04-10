@@ -1,23 +1,47 @@
-import { h , createTextVNode} from "../../lib/guide-mini-vue.esm.js";
-import { Foo } from "./Foo.js";
-export const App = {
+import { h, provide, inject } from "../../lib/guide-mini-vue.esm.js";
+const Provider = {
+  name: "Provider",
+  setup() {
+    provide("ProviderTwo", "ProviderTwo");
+    provide("foo", "fooVal"), provide("bar", "barVal");
+  },
   render() {
-    const app = h("div", {}, "app");
-    const foo = h(
-      Foo,
-      {},
-      {
-        header: ({ age }) => [
-          h("p", {}, "header" + age),
-          createTextVNode("你好呀"),
-        ],
-        footer: () => h("p", {}, "footer"),
-      }
-    );
-    return h("div", {}, [app, foo]);
+    return h("div", {}, [h("p", {}, "Provider"), h(ProviderTwo)]);
+  },
+};
+
+const ProviderTwo = {
+  name: "ProviderTwo",
+  setup() {},
+  render() {
+    return h("div", {}, [h("p", {}, "ProviderTwo"), h(Consumer)]);
+  },
+};
+
+const Consumer = {
+  name: "Consumer",
+  setup() {
+    const foo = inject("foo");
+    const bar = inject("bar");
+    const defaultValue = inject("", () => "hhh");
+    const two = inject("ProviderTwo");
+    return {
+      foo,
+      bar,
+      two,
+      defaultValue
+    };
   },
 
-  setup() {
-    return {};
+  render() {
+    return h("div", {}, `Consumer : ${this.foo} - ${this.bar} - ${this.two} - ${this.defaultValue}`);
+  },
+};
+
+export default {
+  name: "App",
+  setup() {},
+  render() {
+    return h("div", {}, [h("p", {}, "apiInject"), h(Provider)]);
   },
 };

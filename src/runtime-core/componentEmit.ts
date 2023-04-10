@@ -1,4 +1,4 @@
-import { camelize, capitalize, toHandlerKey } from "../shared/index";
+import { toHandlerKey } from "../shared/index";
 
 export function emit(instance, event: string, ...args) {
   const { props } = instance;
