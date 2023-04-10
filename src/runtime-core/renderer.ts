@@ -11,7 +11,7 @@ export function createRenderer(options) {
     patchProp: hostPatchProp,
     insert: hostPatchInsert,
     remove: hostRemove,
-    setElementText : hostSetElementText
+    setElementText: hostSetElementText,
   } = options;
   function render(vnode, container) {
     // patch
@@ -74,29 +74,75 @@ export function createRenderer(options) {
   function patchChildren(n1, n2, container, parentComponent) {
     const prevShapeFlag = n1.shapeFlag;
     const shapeFlag = n2.shapeFlag;
-    const c1 = n1.children
-    const c2 = n2.children 
+    const c1 = n1.children;
+    const c2 = n2.children;
 
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         unmountChildren(n1.children);
       }
       if (c1 !== c2) {
-        hostSetElementText(container,c2)        
+        hostSetElementText(container, c2);
       }
     } else {
       // new -> array
-      if(prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
-        hostSetElementText(container,"")
-        mountChildren(c2,container,parentComponent)
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, "");
+        mountChildren(c2, container, parentComponent);
+      } else {
+        // array diff array
+        patchKeyedChildren(c1, c2, container, parentComponent);
       }
     }
   }
+
+  function isSomeVNodeType(n1, n2) {
+    // type
+    // key
+    return n1.type === n2.type && n1.key === n2.key;
+  }
+
+  function patchKeyedChildren(c1, c2, container, parentComponent) {
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = c2.length - 1;
+
+    // left side
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSomeVNodeType(n1, n2)) {
+        // 比较下一个信息
+        patch(n1, n2, container, parentComponent);
+      } else {
+        break;
+      }
+      i++;
+    }
+
+    // right side
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+
+      if (isSomeVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponent);
+      } else {
+        break;
+      }
+
+      e1--;
+      e2--;
+    }
+
+     
+  }
+
   function unmountChildren(children) {
     for (let i = 0, length = children.length; i < length; i++) {
-      const el = children[i].el
+      const el = children[i].el;
       // remove
-      hostRemove(el)
+      hostRemove(el);
     }
   }
   function patchProps(el, oldProps, newProps) {
