@@ -26,6 +26,7 @@ export function inject(key, defaultValue) {
       if(typeof defaultValue === "function") {
         return defaultValue()
       }
+      return defaultValue
     }
   }
 }
