@@ -183,13 +183,16 @@ export function createRenderer(options) {
       // 已经比对的长度
       let patched = 0;
 
+      //
+      let moved: boolean = false;
+      let maxNewIndexSoFar = 0;
       // 新节点 相对 index 与 旧节点 绝对 index 的映射
       // old -> a (b c d) e   ->  (b c d) -> 1 2 3  老节点是绝对的index
 
       // new -> a (d b c) e   ->  (d b c) -> 0 1 2  新节点是相对的index
       // newIndexToOldIndexMap ->  [0: 3 , 1: 1 , 2: 2]
       const newIndexToOldIndexMap = new Array(toBePatched).fill(0); // 0 表示一种初始化的状态
-      
+
       // 建立新的Array 的映射表, 只建立(不同的区域)的映射表
       // 然后遍历老的Array的不同的区域,去映射表中查看当前 i 指的元素是否有在映射表中,没有就是删除
       for (let i = s1; i <= e2; i++) {
@@ -224,20 +227,36 @@ export function createRenderer(options) {
           hostRemove(prevChild.el);
         } else {
           // 什么时候建立这个映射表呢？ 当老的节点已经匹配上的时候
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            moved = true;
+          }
+
           newIndexToOldIndexMap[newIndex - s2] = i + 1; // +1是防止 i为0 的情况，和初始化的状态区分开
           patch(prevChild, c2[newIndex], container, parentComponent, null);
           patched++;
         }
       }
-      
+
       // 当所有的操作都完成之后，求最长递增子序列
-      const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap);
-      let j = 0; // 最长递增子序列(稳定的序列)的指针
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : [];
+      let j = increasingNewIndexSequence.length - 1; // 最长递增子序列(稳定的序列)的指针
       // 两个指针， i 是toBePatched的指针
-      for (let i = 0; i < toBePatched; i++) {
-        if (i !== increasingNewIndexSequence[j]) {
-        } else {
-          j++;
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = i + s2; // 获取当前节点绝对位置的index
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            hostPatchInsert(nextChild.el, container, anchor);
+          } else {
+            j--;
+          }
         }
       }
     }
