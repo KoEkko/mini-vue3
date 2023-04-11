@@ -165,6 +165,48 @@ export function createRenderer(options) {
         hostRemove(c1[i].el);
         i++;
       }
+    } else {
+      // 中间对比
+      let s1 = i;
+      let s2 = i;
+      const toBePatched = e2 - s2 + 1;
+      let patched = 0;
+      // 建立映射表
+      const keyToNewIndexMap = new Map();
+      for (let i = s1; i <= e2; i++) {
+        const nextChild = c2[i];
+        keyToNewIndexMap.set(nextChild.key, i);
+      }
+
+      // 遍历 old
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i];
+
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el);
+          continue;
+        }
+
+        let newIndex;
+        // 用户有给key的情况
+        if (prevChild.key !== null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key);
+        } else { // 没有就只能遍历新的
+          for (let j = s2; j < e2; j++) {
+            if (isSomeVNodeType(prevChild, c2[j])) {
+              newIndex = j;
+              break;
+            }
+          }
+        }
+
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el);
+        } else {
+          patch(prevChild, c2[newIndex], container, parentComponent, null);
+          patched++;
+        }
+      }
     }
   }
 
