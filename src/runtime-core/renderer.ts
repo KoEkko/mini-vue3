@@ -167,12 +167,31 @@ export function createRenderer(options) {
       }
     } else {
       // 中间对比
+      // 此时已经找出不同的区间了
+      // a b (c d) e
+      // a b (d c) e
+      // i === 2   e1 === 3    e2 === 3
       let s1 = i;
       let s2 = i;
-      const toBePatched = e2 - s2 + 1;
-      let patched = 0;
-      // 建立映射表
+
+      // 查找有两种方法: 1. 遍历 O(n)   2.Map映射  O(1)
+      // 建立映射表 -> 新节点 key 对 index 的映射
       const keyToNewIndexMap = new Map();
+
+      // 新节点的长度
+      const toBePatched = e2 - s2 + 1;
+      // 已经比对的长度
+      let patched = 0;
+
+      // 新节点 相对 index 与 旧节点 绝对 index 的映射
+      // old -> a (b c d) e   ->  (b c d) -> 1 2 3  老节点是绝对的index
+
+      // new -> a (d b c) e   ->  (d b c) -> 0 1 2  新节点是相对的index
+      // newIndexToOldIndexMap ->  [0: 3 , 1: 1 , 2: 2]
+      const newIndexToOldIndexMap = new Array(toBePatched).fill(0); // 0 表示一种初始化的状态
+      
+      // 建立新的Array 的映射表, 只建立(不同的区域)的映射表
+      // 然后遍历老的Array的不同的区域,去映射表中查看当前 i 指的元素是否有在映射表中,没有就是删除
       for (let i = s1; i <= e2; i++) {
         const nextChild = c2[i];
         keyToNewIndexMap.set(nextChild.key, i);
@@ -181,7 +200,7 @@ export function createRenderer(options) {
       // 遍历 old
       for (let i = s1; i <= e1; i++) {
         const prevChild = c1[i];
-
+        // 如果已经比对的长度 大于新节点的长度，那就是移除节点
         if (patched >= toBePatched) {
           hostRemove(prevChild.el);
           continue;
@@ -191,20 +210,34 @@ export function createRenderer(options) {
         // 用户有给key的情况
         if (prevChild.key !== null) {
           newIndex = keyToNewIndexMap.get(prevChild.key);
-        } else { // 没有就只能遍历新的
-          for (let j = s2; j < e2; j++) {
+        } else {
+          // 没有就只能遍历新的
+          for (let j = s2; j <= e2; j++) {
             if (isSomeVNodeType(prevChild, c2[j])) {
               newIndex = j;
               break;
             }
           }
         }
-
+        // 当前这个节点在新的不存在,删除
         if (newIndex === undefined) {
           hostRemove(prevChild.el);
         } else {
+          // 什么时候建立这个映射表呢？ 当老的节点已经匹配上的时候
+          newIndexToOldIndexMap[newIndex - s2] = i + 1; // +1是防止 i为0 的情况，和初始化的状态区分开
           patch(prevChild, c2[newIndex], container, parentComponent, null);
           patched++;
+        }
+      }
+      
+      // 当所有的操作都完成之后，求最长递增子序列
+      const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap);
+      let j = 0; // 最长递增子序列(稳定的序列)的指针
+      // 两个指针， i 是toBePatched的指针
+      for (let i = 0; i < toBePatched; i++) {
+        if (i !== increasingNewIndexSequence[j]) {
+        } else {
+          j++;
         }
       }
     }
@@ -308,4 +341,45 @@ export function createRenderer(options) {
   return {
     createApp: createAppApi(render),
   };
+}
+// 最长递增子序列
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
 }
