@@ -228,13 +228,12 @@ export function createRenderer(options) {
         if (newIndex === undefined) {
           hostRemove(prevChild.el);
         } else {
-          // 什么时候建立这个映射表呢？ 当老的节点已经匹配上的时候
           if (newIndex >= maxNewIndexSoFar) {
             maxNewIndexSoFar = newIndex;
           } else {
             moved = true;
           }
-
+          // 什么时候建立这个映射表呢？ 当老的节点已经匹配上的时候
           newIndexToOldIndexMap[newIndex - s2] = i + 1; // +1是防止 i为0 的情况，和初始化的状态区分开
           patch(prevChild, c2[newIndex], container, parentComponent, null);
           patched++;
