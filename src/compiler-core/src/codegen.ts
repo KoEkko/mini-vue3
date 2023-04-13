@@ -17,8 +17,9 @@ export function generate(ast:any) {
 }
 
 function genNode(node, context) {
+  console.log(node);
   const { push } = context
-  push(`return ${node.content}`)
+  push(`return  ${node.content}`)
 }
 
 function createCodeGenContext():any {
