@@ -1,5 +1,5 @@
-export const TO_DISPLAY_STRING = Symbol("toDisplayString")
-
-export const helperMapMenu = {
-  [TO_DISPLAY_STRING]:"toDisplayString"
-}
+export const TO_DISPLAY_STRING = Symbol("toDisplayString");
+export const CREATE_ELEMENT_VNODE = Symbol("create_element_vnode")
+export const helperMapName = {
+  [TO_DISPLAY_STRING]: "toDisplayString",
+};
