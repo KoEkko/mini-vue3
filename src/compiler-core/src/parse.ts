@@ -40,10 +40,6 @@ function isEnd(context, ancestor) {
       }
     }
   }
-  // if (parentTag && s.startsWith(`</${parentTag}>`)) {
-  //   return true;
-  // }
-  // 1.source没有值
   return !s;
 }
 
@@ -139,6 +135,7 @@ function advanceBy(context: any, length: number) {
 function createRoot(children) {
   return {
     children,
+    type:NodeTypes.ROOT
   };
 }
 
