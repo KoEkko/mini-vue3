@@ -1,93 +1,100 @@
-import { NodeTypes } from "../src/ast";
-import { baseParse } from "../src/parse";
+import { ElementTypes, NodeTypes } from '../ast';
+import { baseParse } from '../parse';
 
-describe("Parse", () => {
-  describe("interpolation", () => {
-    test("simple interpolation", () => {
-      const ast = baseParse("{{message}}");
-      // root
-      expect(ast.children[0]).toStrictEqual({
+describe('Parse', () => {
+  describe('interpolation', () => {
+    test('simple interpolation', () => {
+      const ast = baseParse('{{ message }}');
+      const interpolation = ast.children[0];
+
+      expect(interpolation).toStrictEqual({
         type: NodeTypes.INTERPOLATION,
         content: {
           type: NodeTypes.SIMPLE_EXPRESSION,
-          content: "message",
-        },
+          content: `message`
+        }
       });
     });
   });
 
-  describe("element parse", () => {
-    it("simple element div", () => {
-      const ast = baseParse("<div></div>");
-      expect(ast.children[0]).toStrictEqual({
+  describe('element', () => {
+    test('simple element div', () => {
+      const ast = baseParse('<div></div>');
+      const element = ast.children[0];
+
+      expect(element).toStrictEqual({
         type: NodeTypes.ELEMENT,
-        tag: "div",
-        children: [],
+        tag: 'div',
+        children: []
       });
     });
   });
 
-  describe("text", () => {
-    it("simple text", () => {
-      const ast = baseParse("some text");
-      expect(ast.children[0]).toStrictEqual({
+  describe('text', () => {
+    test('simple text div', () => {
+      const ast = baseParse('some text');
+      const text = ast.children[0];
+
+      expect(text).toStrictEqual({
         type: NodeTypes.TEXT,
-        content: "some text",
+        content: 'some text'
       });
     });
   });
 
-  test("hello world", () => {
-    const ast = baseParse("<div>hi,{{message}}</div>");
-    expect(ast.children[0]).toStrictEqual({
+  test('hello world', () => {
+    const ast = baseParse('<div>hi, {{message}}</div>');
+    const content = ast.children[0];
+
+    expect(content).toStrictEqual({
       type: NodeTypes.ELEMENT,
-      tag: "div",
+      tag: 'div',
       children: [
         {
           type: NodeTypes.TEXT,
-          content: "hi,",
+          content: 'hi, '
         },
         {
           type: NodeTypes.INTERPOLATION,
           content: {
             type: NodeTypes.SIMPLE_EXPRESSION,
-            content: "message",
-          },
-        },
-      ],
+            content: `message`
+          }
+        }
+      ]
     });
   });
 
-  test("Nested element", () => {
-    const ast = baseParse("<div><p>hi</p>{{message}}</div>");
-    expect(ast.children[0]).toStrictEqual({
+  test('Nested element', () => {
+    const ast = baseParse('<div><p>hi, </p>{{message}}</div>');
+    const content = ast.children[0];
+
+    expect(content).toStrictEqual({
       type: NodeTypes.ELEMENT,
-      tag: "div",
+      tag: 'div',
       children: [
         {
           type: NodeTypes.ELEMENT,
-          tag: "p",
+          tag: 'p',
           children: [
             {
               type: NodeTypes.TEXT,
-              content: "hi",
-            },
-          ],
+              content: 'hi, '
+            }
+          ]
         },
         {
           type: NodeTypes.INTERPOLATION,
           content: {
             type: NodeTypes.SIMPLE_EXPRESSION,
-            content: "message",
-          },
-        },
-      ],
+            content: `message`
+          }
+        }
+      ]
     });
   });
 
-  test.only("should throw an warn", () => {
-    expect(() => {
-      baseParse("<div><span></div>")
-    }).toThrow("缺少结束标签:span");
+  test('should throw error when lack end tag', () => {
+    expect(() => baseParse('<div><span></div>')).toThrow(`缺少结束标签:span`);
   });
 });

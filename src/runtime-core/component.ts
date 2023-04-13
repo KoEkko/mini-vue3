@@ -1,26 +1,27 @@
-import { proxyRefs } from "../reactivity";
 import { shallowReadonly } from "../reactivity/reactive";
+import { proxyRefs } from "../reactivity/ref";
 import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
-export function createComponentInstance(vnode,parent) {
+
+let currentInstance = null;
+
+export function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
-    next:null,
     type: vnode.type,
-    props: {},
-    parent,
-    isMounted:false,
-    provides: parent ? parent.provides :{}, 
+    next: null,
     setupState: {},
-    subTree:{},
-    emit: () => {},
+    props: {},
     slots: {},
+    parent,
+    provides: parent ? parent.provides : {},
+    isMounted: false,
+    subTree: {},
+    emit: () => {},
   };
-
   component.emit = emit.bind(null, component) as any;
-
   return component;
 }
 
@@ -33,19 +34,17 @@ export function setupComponent(instance) {
 
 function setupStatefulComponent(instance) {
   const Component = instance.type;
-
-  // ctx
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
-
   const { setup } = Component;
-
   if (setup) {
-    setCurrentInstance(instance)
-    // function  or  Object
+    setCurrentInstance(instance);
+
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
-    setCurrentInstance(null)
+
+    setCurrentInstance(null);
+
     handleSetupResult(instance, setupResult);
   }
 }
@@ -58,18 +57,25 @@ function handleSetupResult(instance, setupResult) {
   finishComponentSetup(instance);
 }
 
-function finishComponentSetup(instance: any) {
+function finishComponentSetup(instance) {
   const Component = instance.type;
-  if (Component.render) {
-    instance.render = Component.render;
+  if (compiler && !Component.render) {
+    if (Component.template) {
+      Component.render = compiler(Component.template);
+    }
   }
+  instance.render = Component.render;
 }
 
-let currentInstance = null
 export function getCurrentInstance() {
-  return currentInstance 
+  return currentInstance;
 }
 
-function setCurrentInstance(instance) {
-  currentInstance = instance
+export function setCurrentInstance(instance) {
+  currentInstance = instance;
+}
+
+let compiler;
+export function registerRuntimeCompiler(_compiler) {
+  compiler = _compiler;
 }
