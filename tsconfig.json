@@ -104,14 +104,6 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
-    "paths": {
-      "@guide-mini-vue/*": ["./packages/*/src"]
-    }
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": [
-    "packages/*/src",
-    "packages/*/__tests__",
-    "packages/compiler-core/src/compiler-core/tests"
-  ]
 }
